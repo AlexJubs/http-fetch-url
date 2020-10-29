@@ -5,10 +5,36 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define help_message "Usage of ./url_cli: \n --profile <int> \n		A positive integer, number of http requests (default 1) \n --url <url> \n 		URL to fetch data from, as a string (default `https://alex-worker.alexjubs.workers.dev/`)"
+#define help_message "Usage of ./url_cli: \n --profile <int> \n		A positive integer, number of http requests (default 1) \n --url <url> \n 		URL to fetch data from, as a string (default `https://alex-worker.alexjubs.workers.dev/`) \nNote: if --profile is specified, a URL must also be specified \n Also, if the URL passed in is the same as the '/links' error, it will not work"
 #define URL "https://alex-worker.alexjubs.workers.dev/links"
 
-void fetch_url(char * url);
+void fetch_url(char * url, int dump_to_console);
+unsigned long rcv_bites=0;
+
+float mean(double runtimes[], int n) {
+	float sum = 0;
+
+	for(int i = 0; i < n; i++) {
+		sum+=runtimes[i];
+	}
+	return sum/(float)n;
+}
+
+float min(double runtimes[], int n) {
+	float res = runtimes[0];
+	for (int i=0; i < n; i++) {
+		if (runtimes[i] <= res) res = runtimes[i];
+	}
+	return res;
+}
+
+float max(double runtimes[], int n) {
+	float res = runtimes[0];
+	for (int i=0; i < n; i++) {
+		if (runtimes[i] >= res) res = runtimes[i];
+	}
+	return res;
+}
 
 int main( int argc, char** argv ) {
 	// the default values
@@ -28,7 +54,7 @@ int main( int argc, char** argv ) {
 			// store the url in the url char
 			url = strdup(argv[2]);
 		}
-		else if (strcmp(argv[1], "--profile") == 0) {
+		if (strcmp(argv[1], "--profile") == 0) {
 			// store the url in the url char
 			profile = *strdup(argv[2]) - '0';
 		}
@@ -54,13 +80,30 @@ int main( int argc, char** argv ) {
 	}
 	
 	if (profile == 1) {
-		fetch_url(url);
+		fetch_url(url, 1);
 	}
 
 	else if (profile > 1) {
 		// measuring the time taken for the request
 		clock_t begin = clock();
-		float runtimes[profile];
+		double runtimes[profile];
+
+		// send N requests, and send metrics
+		for (int i=0; i < profile; i++) {
+			// measure the time taken
+			clock_t begin = clock();
+			fetch_url(url, 0);
+			clock_t end = clock();
+			runtimes[i] = (double)(end - begin) / CLOCKS_PER_SEC;
+		}
+
+		// collect metrics
+		printf("Number of requests: %d\n", profile);
+		printf("Fastest time: %f \n", min(runtimes, profile));
+		printf("Slowest time: %f \n", max(runtimes, profile));
+		printf("Mean time: %f \n", mean(runtimes, profile));
+		printf("The size in bites of smallest response: %lu\n", rcv_bites);
+		printf("The size in bites of largest response: %lu\n", rcv_bites);
 	}
 
 	return 0;
@@ -93,10 +136,12 @@ size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
   s->ptr[new_len] = '\0';
   s->len = new_len;
 
+  rcv_bites += sizeof(nmemb);
+
   return size*nmemb;
 }
 
-void fetch_url(char * url)
+void fetch_url(char * url, int dump_to_console)
 {
   CURL *curl;
   CURLcode res;
@@ -111,7 +156,10 @@ void fetch_url(char * url)
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
     res = curl_easy_perform(curl);
 
-    printf("%s\n", s.ptr);
+    if (dump_to_console) {
+    	printf("%s\n", s.ptr);
+    }
+    
     free(s.ptr);
 
     /* always cleanup */
