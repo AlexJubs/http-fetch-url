@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #define help_message "Usage of ./url_cli: \n --profile <int> \n		A positive integer, number of http requests (default 1) \n --url <url> \n 		URL to fetch data from, as a string (default `https://alex-worker.alexjubs.workers.dev/`)"
+#define URL "https://alex-worker.alexjubs.workers.dev/"
 
 void fetch_url(char * url);
 
@@ -42,7 +43,14 @@ int main( int argc, char** argv ) {
 			}
 		}
 	}
-	else if (argc != 1 || argc == 4 || argc > 5) printf("%s\n", help_message);
+	// we can't have an odd number of inputs (argv-1)
+	else if (argc%2 == 0) printf("%s\n", help_message);
+
+	// just in case input was not parsed correctly
+	if (argc > 1 && strcmp(url, URL) == 0) {
+		printf("%s\n", help_message);
+		return 0;
+	}
 
 	printf("profile is %d\n", profile);
 	printf("url is %s\n", url);
