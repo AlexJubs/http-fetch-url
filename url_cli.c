@@ -3,15 +3,16 @@
 #include <curl/curl.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define help_message "Usage of ./url_cli: \n --profile <int> \n		A positive integer, number of http requests (default 1) \n --url <url> \n 		URL to fetch data from, as a string (default `https://alex-worker.alexjubs.workers.dev/`)"
-#define URL "https://alex-worker.alexjubs.workers.dev/"
+#define URL "https://alex-worker.alexjubs.workers.dev/links"
 
 void fetch_url(char * url);
 
 int main( int argc, char** argv ) {
 	// the default values
-	char * url = "https://alex-worker.alexjubs.workers.dev/";
+	char * url = "https://alex-worker.alexjubs.workers.dev/links";
 	int profile = 1;
 
 	// parse the CLI args
@@ -51,29 +52,69 @@ int main( int argc, char** argv ) {
 		printf("%s\n", help_message);
 		return 0;
 	}
+	
+	if (profile == 1) {
+		fetch_url(url);
+	}
 
-	printf("profile is %d\n", profile);
-	printf("url is %s\n", url);
-
-	//fetch_url(url);
+	else if (profile > 1) {
+		// measuring the time taken for the request
+		clock_t begin = clock();
+		float runtimes[profile];
+	}
 
 	return 0;
 }
 
-void fetch_url(char * url) {
-	CURL *curl;
-	CURLcode res;
-	curl_global_init(CURL_GLOBAL_DEFAULT);
-	curl = curl_easy_init();
-	if( curl ) {
-		curl_easy_setopt(curl, CURLOPT_URL, url );
+struct string {
+  char *ptr;
+  size_t len;
+};
 
-		res = curl_easy_perform(curl);
+void init_string(struct string *s) {
+  s->len = 0;
+  s->ptr = malloc(s->len+1);
+  if (s->ptr == NULL) {
+    fprintf(stderr, "malloc() failed\n");
+    exit(EXIT_FAILURE);
+  }
+  s->ptr[0] = '\0';
+}
 
-		if( res != CURLE_OK) {
-			fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-		}
+size_t writefunc(void *ptr, size_t size, size_t nmemb, struct string *s)
+{
+  size_t new_len = s->len + size*nmemb;
+  s->ptr = realloc(s->ptr, new_len+1);
+  if (s->ptr == NULL) {
+    fprintf(stderr, "realloc() failed\n");
+    exit(EXIT_FAILURE);
+  }
+  memcpy(s->ptr+s->len, ptr, size*nmemb);
+  s->ptr[new_len] = '\0';
+  s->len = new_len;
 
-	curl_easy_cleanup(curl);
-	}
+  return size*nmemb;
+}
+
+void fetch_url(char * url)
+{
+  CURL *curl;
+  CURLcode res;
+
+  curl = curl_easy_init();
+  if(curl) {
+    struct string s;
+    init_string(&s);
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+    res = curl_easy_perform(curl);
+
+    printf("%s\n", s.ptr);
+    free(s.ptr);
+
+    /* always cleanup */
+    curl_easy_cleanup(curl);
+  }
 }
