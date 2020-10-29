@@ -1,3 +1,4 @@
+// this program was written by Alex Jabbour on Oct 28th, 2020
 #include <stdio.h>
 #include <curl/curl.h>
 #include <string.h>
