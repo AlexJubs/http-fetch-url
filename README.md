@@ -1,4 +1,4 @@
-# http-fetch-url
+# My version of the cURL cli
 
 I orginally wrote this for a coding assessment, but I found it pretty useful so I decided to modify a few things :)
 
