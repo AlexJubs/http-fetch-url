@@ -2,10 +2,13 @@
 #include <curl/curl.h>
 #include <string.h>
 
-#define help_message "Usage of ./url_cli: \n --profile int \n		A positive integer (default 1) \n --url string \n 		URL to fetch data from (default `https://alex-worker.alexjubs.workers.dev/`)"
+#define help_message "Usage of ./url_cli: \n --profile <int> \n		A positive integer, number of http requests (default 1) \n --url <url> \n 		URL to fetch data from, as a string (default `https://alex-worker.alexjubs.workers.dev/`)"
+
+void fetch_url(char * url);
 
 int main( int argc, char** argv ) {
-	char * url;
+	char * url = "https://alex-worker.alexjubs.workers.dev/";
+	int profile = 1;
 
 	// parse the CLI args
 	if (argc == 2) {
@@ -14,19 +17,34 @@ int main( int argc, char** argv ) {
 			return 1;
 		}
 	}
-	else if (argc == 3) {
+	// case where there is only 1 input which must be the url
+	else if (argc >= 3) {
 		if (strcmp(argv[1], "--url") == 0) {
 			// store the url in the url char
 			url = strdup(argv[2]);
 		}
-		else {
-			printf("Error: must provide a url to parse: `--url <url>`\n");
+		else if (strcmp(argv[1], "--profile") == 0) {
+			// store the url in the url char
+			profile = *strdup(argv[2]) - '0';
+		}
+		// parsing url and profile at the same time
+		if (argc == 5) {
+			if (strcmp(argv[3], "--url") == 0) {
+				// store the url in the url char
+				url = strdup(argv[4]);
+			}
+			else if (strcmp(argv[3], "--profile") == 0) {
+				// store the url in the url char
+				profile = *strdup(argv[4]) - '0';
+			}
 		}
 	}
-	else if (argc == 5) {
+	else if (argc != 1 || argc == 4 || argc > 5) printf("%s\n", help_message);
 
-	}
-	else printf("%s\n", help_message);
+	printf("profile is %d\n", profile);
+	printf("url is %s\n", url);
+
+	//fetch_url(url);
 
 	return 0;
 }
