@@ -17,6 +17,6 @@ Another argument can be specified, N (--profile), which takes a positive integer
 
 I use this to measure how fast I can perform http on different hosts. I choose C as it is a perfect systems programming language, very well optimized as a performant programming tool.
 
-## whats next
+## What's next
 
-I'm currently looking at building an algorithm to approximate the geographical location of a webserver 🧠
+I'm currently looking at building an algorithm to approximate the geographical location of a webserver using this tool🧠
